@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
@@ -32,12 +32,28 @@ class Job(db.Model):
         return f'<Job {self.title}>'
 
 # Create the database tables
+with app.app_context():
+    db.create_all()
+
+# API route to fetch all jobs
+@app.route('/api/jobs', methods=['GET'])
+def get_jobs():
+    jobs = Job.query.all()  # Fetch all jobs from the Job table
+    job_list = []
+    for job in jobs:
+        job_data = {
+            'id': job.id,
+            'title': job.title,
+            'description': job.description,
+            'username': job.user.username  # Include user information
+        }
+        job_list.append(job_data)
+    
+    return jsonify(job_list)  # Return the jobs as a JSON response
+
+@app.route('/')
+def home():
+    return "Welcome to the Job Listing System!"
+
 if __name__ == '__main__':
-    with app.app_context():  # Set up an application context
-        db.create_all()  # This will create the User and Job tables based on the models
-
-    @app.route('/')
-    def home():
-        return "Welcome to the Job Listing System!"
-
     app.run(debug=True)
